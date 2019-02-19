@@ -26,8 +26,8 @@ func Parallel(name string, steps ...ci.Step) *ci.Stage {
 	}
 }
 
-func Run(command string) *ci.Run {
-	return &ci.Run{Command: command}
+func Run(command string, args ...string) *ci.Run {
+	return &ci.Run{Command: command, Args: args}
 }
 
 func SetEnv(name, value string) *ci.SetEnv {

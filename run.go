@@ -7,6 +7,7 @@ import (
 // Run implements a step for executing a command
 type Run struct {
 	Command string
+	Args    []string
 }
 
 // Setup sets up the step
