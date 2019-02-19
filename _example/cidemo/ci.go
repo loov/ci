@@ -15,7 +15,7 @@ import (
 	"golang.org/x/sync/errgroup"
 )
 
-var pipelines = ci.Pipelines{
+var pipelines = Pipelines(
 	Pipeline("Default", "",
 		Stage("Download",
 			Run("go version"),
@@ -49,7 +49,7 @@ var pipelines = ci.Pipelines{
 			),
 		),
 	),
-}
+)
 
 func main() {
 	flag.Parse()

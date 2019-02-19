@@ -2,6 +2,10 @@ package dsl
 
 import "github.com/loov/ci"
 
+func Pipelines(pipelines ...*ci.Pipeline) ci.Pipelines {
+	return pipelines
+}
+
 func Pipeline(name, desc string, steps ...ci.Step) *ci.Pipeline {
 	return &ci.Pipeline{
 		Name:  name,
