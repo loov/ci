@@ -76,7 +76,7 @@ type CreateTempDir struct {
 func (step *CreateTempDir) Setup(parent *Task) {
 	task := parent.Subtask("%v := tempdir", step.Env)
 	task.Exec = func(context, _ *Context) error {
-		dir := context.Global.CreateTempDir()
+		dir := context.Global.CreateTempDir(step.Env)
 		if step.Global {
 			context.Global.SetEnv(step.Env, dir)
 		} else {
@@ -95,8 +95,7 @@ type TempGopath struct {
 func (step *TempGopath) Setup(parent *Task) {
 	task := parent.Subtask("temp gopath")
 	task.Exec = func(_, context *Context) error {
-		dir := context.Global.CreateTempDir()
-		context.SetEnv("GOBIN", "$GOPATH/bin")
+		dir := context.Global.CreateTempDir("gopath")
 		context.SetEnv("GOPKG", "$GOPATH/pkg")
 		context.SetEnv("GOPATH", dir)
 		return nil
