@@ -1,5 +1,9 @@
 package ci
 
+import (
+	"path/filepath"
+)
+
 // Copy copies from source directory to destination directory
 type Copy struct {
 	SourceGlob  string
@@ -10,7 +14,22 @@ type Copy struct {
 func (step *Copy) Setup(parent *Task) {
 	task := parent.Subtask("cp %q %q", step.SourceGlob, step.Destination)
 	task.Exec = func(context, _ *Context) error {
-		// TODO: verify source and destination is inside context.Global.WorkDir
+		destinationErr := context.Global.SafeGlob(step.Destination)
+		if destinationErr != nil {
+			return destinationErr
+		}
+
+		sourceErr := context.Global.SafeGlob(step.SourceGlob)
+		if sourceErr != nil {
+			return sourceErr
+		}
+
+		_, err := filepath.Glob(step.SourceGlob)
+		if err != nil {
+			return err
+		}
+
+		// TODO: verify source and destination is inside
 		return nil
 	}
 }
@@ -24,7 +43,12 @@ type Remove struct {
 func (step *Remove) Setup(parent *Task) {
 	task := parent.Subtask("rm %q", step.Glob)
 	task.Exec = func(context, _ *Context) error {
-		// TODO: verify glob is inside context.Global.WorkDir
+		err := context.Global.SafeGlob(step.Glob)
+		if err != nil {
+			return err
+		}
+
+		// TODO: verify glob is inside
 		return nil
 	}
 }

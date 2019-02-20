@@ -46,19 +46,29 @@ type Context struct {
 }
 
 // NewGlobalContext creates
-func NewGlobalContext(logger Logger) (*GlobalContext, error) {
+func NewGlobalContext(scriptDir string, logger Logger) (*GlobalContext, error) {
 	context := &GlobalContext{}
 	context.Global = context
+
 	context.Logger = logger
 	if context.Logger == nil {
 		context.Logger = NewStd()
 	}
+
 	context.Env = os.Environ()
 
 	err := context.init()
 	if err != nil {
 		return nil, err
 	}
+
+	absScriptDir, err := filepath.Abs(scriptDir)
+	if err != nil {
+		return nil, err
+	}
+
+	context.ScriptDir = absScriptDir
+	context.SetEnv("SCRIPTDIR", context.ScriptDir)
 
 	if runtime.GOOS == "windows" {
 		context.SetEnv("TEMP", context.temp.def)
@@ -85,6 +95,11 @@ func (context *GlobalContext) init() error {
 		return err
 	}
 
+	return nil
+}
+
+// SafeGlob checks whether glob can be changed
+func (context *GlobalContext) SafeGlob(glob string) error {
 	return nil
 }
 
