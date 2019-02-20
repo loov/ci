@@ -11,7 +11,7 @@ type SetEnv struct {
 func (step *SetEnv) Setup(parent *Task) {
 	task := parent.Subtask("%v := %q", step.Env, step.Value)
 	task.Exec = func(context, _ *Context) error {
-		value, err := context.EvalEnv(step.Value)
+		value, err := context.ExpandEnv(step.Value)
 		if err != nil {
 			return err
 		}
@@ -36,11 +36,13 @@ type WhenEnv struct {
 func (step *WhenEnv) Setup(parent *Task) {
 	task := parent.Subtask("when %v == %q", step.Env, step.Value)
 	task.Exec = func(context, _ *Context) error {
-		value, err := context.EvalEnv(step.Value)
+		value, err := context.ExpandEnv(step.Value)
 		if err != nil {
 			return err
 		}
-		if context.GetEnv(step.Env) != value {
+
+		current, _ := context.GetEnv(step.Env)
+		if current != value {
 			return ErrSkip
 		}
 		return nil
@@ -58,7 +60,8 @@ type WhenEnvSet struct {
 func (step *WhenEnvSet) Setup(parent *Task) {
 	task := parent.Subtask("when %v", step.Env)
 	task.Exec = func(context, _ *Context) error {
-		if context.GetEnv(step.Env) == "" {
+		current, _ := context.GetEnv(step.Env)
+		if current == "" {
 			return ErrSkip
 		}
 		return nil

@@ -1,12 +1,14 @@
 package ci
 
 import (
+	"fmt"
 	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
-	"regexp"
+	"runtime"
 	"strconv"
+	"strings"
 	"sync"
 	"sync/atomic"
 )
@@ -51,7 +53,21 @@ func NewGlobalContext(logger Logger) (*GlobalContext, error) {
 	context := &GlobalContext{}
 	context.Global = context
 	context.Logger = logger
-	return context, context.init()
+	context.Env = os.Environ()
+
+	err := context.init()
+	if err != nil {
+		return nil, err
+	}
+
+	if runtime.GOOS == "windows" {
+		context.SetEnv("TEMP", context.temp.def)
+		context.SetEnv("TMP", context.temp.def)
+	} else {
+		context.SetEnv("TMPDIR", context.temp.def)
+	}
+
+	return context, err
 }
 
 func (context *GlobalContext) init() error {
@@ -99,23 +115,54 @@ func (context *Context) Clone() *Context {
 	}
 }
 
-// rxEnv matches any environment variable
-var rxEnv = regexp.MustCompile(`\$[a-zA-Z0-9_]+`)
-
 // SetEnv changes environment variable value
 func (context *Context) SetEnv(env, value string) {
-	// TODO:
+	_ = context.UnsetEnv(env)
+	context.Env = append(context.Env, env+"="+value)
+}
+
+// UnsetEnv removes an existing environment value
+func (context *Context) UnsetEnv(env string) bool {
+	for i, env := range context.Env {
+		eq := strings.Index(env, "=")
+		if eq < 0 {
+			continue
+		}
+		if strings.EqualFold(env[:eq], env) {
+			context.Env = append(context.Env[:i], context.Env[i+1:]...)
+			return true
+		}
+	}
+	return false
 }
 
 // GetEnv finds the value of an environment variable
-func (context *Context) GetEnv(env string) string {
-	// TODO:
-	return ""
+func (context *Context) GetEnv(env string) (string, bool) {
+	for _, env := range context.Env {
+		eq := strings.Index(env, "=")
+		if eq < 0 {
+			continue
+		}
+		if strings.EqualFold(env[:eq], env) {
+			return env[eq+1:], true
+		}
+	}
+	return "", false
 }
 
-// EvalEnv replaces enviroment values in value,
+// ExpandEnv replaces enviroment values in value,
 // returns an error when it is missing
-func (context *Context) EvalEnv(value string) (string, error) {
-	// TODO:
-	return value, nil
+func (context *Context) ExpandEnv(value string) (string, error) {
+	var missing []string
+	expanded := os.Expand(value, func(env string) string {
+		value, ok := context.GetEnv(env)
+		if !ok {
+			missing = append(missing, value)
+		}
+		return value
+	})
+	if len(missing) > 0 {
+		return expanded, fmt.Errorf("missing variables: %v", missing)
+	}
+	return expanded, nil
 }
