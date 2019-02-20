@@ -2,7 +2,6 @@ package ci
 
 import (
 	"fmt"
-	"io"
 	"io/ioutil"
 	"os"
 	"path/filepath"
@@ -14,10 +13,10 @@ import (
 
 type Logger interface {
 	Named(name string) Logger
-	Output() (stdout, stderr io.Writer)
+	// Output() (stdout, stderr io.Writer)
 
 	Print(v ...interface{})
-	Printf(v ...interface{})
+	Printf(format string, v ...interface{})
 
 	Error(v ...interface{})
 	Errorf(format string, v ...interface{})
@@ -51,6 +50,9 @@ func NewGlobalContext(logger Logger) (*GlobalContext, error) {
 	context := &GlobalContext{}
 	context.Global = context
 	context.Logger = logger
+	if context.Logger == nil {
+		context.Logger = NewStd()
+	}
 	context.Env = os.Environ()
 
 	err := context.init()
@@ -74,9 +76,6 @@ func (context *GlobalContext) init() error {
 	// create root temp directory
 	context.temp.root, err = ioutil.TempDir("", "ci")
 	if err != nil {
-		return err
-	}
-	if err := os.Mkdir(context.temp.root, 0777); err != nil {
 		return err
 	}
 
@@ -104,12 +103,13 @@ func (context *GlobalContext) Cleanup() error {
 	return os.RemoveAll(context.temp.root)
 }
 
-// Clone creates a clone of the context
-func (context *Context) Clone() *Context {
+// Sub creates a sub context
+func (context *Context) Sub(name string) *Context {
 	return &Context{
 		Global:     context.Global,
 		WorkingDir: context.WorkingDir,
 		Env:        append([]string{}, context.Env...),
+		Logger:     context.Logger.Named(name),
 	}
 }
 

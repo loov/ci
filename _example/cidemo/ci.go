@@ -73,12 +73,17 @@ func main() {
 	group.Go(func() error {
 		defer cancel()
 
-		globalContext := &ci.GlobalContext{}
-		globalContext.Global = globalContext
-		context := &ci.Context{Global: globalContext}
-		return task.Run(context)
+		globalContext, err := ci.NewGlobalContext(nil)
+		if err != nil {
+			return err
+		}
+
+		return task.Run(&globalContext.Context)
 	})
-	group.Go(func() error { return monitor(ctx, task) })
+	group.Go(func() error {
+		return nil
+		return monitor(ctx, task)
+	})
 
 	err := group.Wait()
 

@@ -82,7 +82,7 @@ func (task *Task) Run(context *Context) (err error) {
 	defer task.updateStatus((*TaskStatus).Finish)
 	defer task.updateStatus(func(status *TaskStatus) { status.Errored = err != nil })
 
-	subcontext := context.Clone()
+	subcontext := context.Sub(task.Name)
 	if task.Exec != nil {
 		err := task.Exec(context, subcontext)
 		if err == ErrSkip {
