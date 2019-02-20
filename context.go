@@ -98,8 +98,8 @@ func (context *GlobalContext) init() error {
 	return nil
 }
 
-// SafeGlob checks whether glob can be changed
-func (context *GlobalContext) SafeGlob(glob string) error {
+// SafePath checks whether glob can be changed
+func (context *GlobalContext) SafePath(glob string) error {
 	return nil
 }
 
@@ -178,4 +178,31 @@ func (context *Context) ExpandEnv(value string) (string, error) {
 		return expanded, fmt.Errorf("missing variables: %v", missing)
 	}
 	return expanded, nil
+}
+
+// AbsGlob converts path with environment variables to a absolute path
+func (context *Context) AbsGlob(value string) (abs string, absprefix string, err error) {
+	expanded, err := context.ExpandEnv(value)
+	if err != nil {
+		return "", "", err
+	}
+
+	abs, err = filepath.Abs(expanded)
+	if err != nil {
+		return "", "", err
+	}
+
+	absprefix = extractGlobPrefix(abs)
+
+	// TODO: verify absprefix
+
+	return abs, absprefix, nil
+}
+
+func extractGlobPrefix(glob string) string {
+	p := strings.IndexAny(glob, "?*")
+	if p < 0 {
+		return glob
+	}
+	return glob[:p]
 }
