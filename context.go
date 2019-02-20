@@ -9,7 +9,6 @@ import (
 	"runtime"
 	"strconv"
 	"strings"
-	"sync"
 	"sync/atomic"
 )
 
@@ -32,7 +31,6 @@ type GlobalContext struct {
 
 	// TempDir defines the temporary working directory
 	temp struct {
-		init  sync.Once
 		root  string
 		def   string
 		index int32
