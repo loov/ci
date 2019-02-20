@@ -150,13 +150,13 @@ func (context *Context) UnsetEnv(env string) bool {
 }
 
 // GetEnv finds the value of an environment variable
-func (context *Context) GetEnv(env string) (string, bool) {
+func (context *Context) GetEnv(target string) (string, bool) {
 	for _, env := range context.Env {
 		eq := strings.Index(env, "=")
 		if eq < 0 {
 			continue
 		}
-		if strings.EqualFold(env[:eq], env) {
+		if strings.EqualFold(env[:eq], target) {
 			return env[eq+1:], true
 		}
 	}
@@ -170,7 +170,7 @@ func (context *Context) ExpandEnv(value string) (string, error) {
 	expanded := os.Expand(value, func(env string) string {
 		value, ok := context.GetEnv(env)
 		if !ok {
-			missing = append(missing, value)
+			missing = append(missing, env)
 		}
 		return value
 	})

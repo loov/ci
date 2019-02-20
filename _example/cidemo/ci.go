@@ -73,7 +73,7 @@ func main() {
 	group.Go(func() error {
 		defer cancel()
 
-		globalContext, err := ci.NewGlobalContext("", nil)
+		globalContext, err := ci.NewGlobalContext(".", nil)
 		if err != nil {
 			return err
 		}

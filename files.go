@@ -14,17 +14,27 @@ type Copy struct {
 func (step *Copy) Setup(parent *Task) {
 	task := parent.Subtask("cp %q %q", step.SourceGlob, step.Destination)
 	task.Exec = func(context, _ *Context) error {
-		destinationErr := context.Global.SafeGlob(step.Destination)
+		source, err := context.ExpandEnv(step.SourceGlob)
+		if err != nil {
+			return err
+		}
+
+		destination, err := context.ExpandEnv(step.Destination)
+		if err != nil {
+			return err
+		}
+
+		destinationErr := context.Global.SafeGlob(destination)
 		if destinationErr != nil {
 			return destinationErr
 		}
 
-		sourceErr := context.Global.SafeGlob(step.SourceGlob)
+		sourceErr := context.Global.SafeGlob(source)
 		if sourceErr != nil {
 			return sourceErr
 		}
 
-		_, err := filepath.Glob(step.SourceGlob)
+		matches, err := filepath.Glob(source)
 		if err != nil {
 			return err
 		}
@@ -43,7 +53,12 @@ type Remove struct {
 func (step *Remove) Setup(parent *Task) {
 	task := parent.Subtask("rm %q", step.Glob)
 	task.Exec = func(context, _ *Context) error {
-		err := context.Global.SafeGlob(step.Glob)
+		glob, err := context.ExpandEnv(step.Glob)
+		if err != nil {
+			return err
+		}
+
+		err = context.Global.SafeGlob(glob)
 		if err != nil {
 			return err
 		}
