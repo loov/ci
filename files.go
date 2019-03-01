@@ -29,6 +29,10 @@ func (step *Copy) Setup(parent *Task) {
 			return fmt.Errorf("glob not allowed in destination %q [expanded %q]", step.Destination, destination)
 		}
 
+		if err := os.MkdirAll(destination, 0777); err != nil && !os.IsExist(err) {
+			return err
+		}
+
 		matches, err := filepath.Glob(source)
 		if err != nil {
 			return err

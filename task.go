@@ -1,6 +1,7 @@
 package ci
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io"
@@ -23,6 +24,9 @@ type TaskStatus struct {
 	Done      bool
 	Errored   bool
 	ExecError error
+
+	Stderr bytes.Buffer
+	Stdout bytes.Buffer
 }
 
 // Task defines the execution tree.
@@ -99,7 +103,7 @@ func (task *Task) Run(context *Context) (err error) {
 
 	if !task.Parallel {
 		for _, subtask := range task.Tasks {
-			err := subtask.Run(context)
+			err := subtask.Run(subcontext)
 			if err != nil {
 				return err
 			}
@@ -110,7 +114,7 @@ func (task *Task) Run(context *Context) (err error) {
 		for _, subtask := range task.Tasks {
 			subtask := subtask
 			group.Go(func() error {
-				return subtask.Run(context)
+				return subtask.Run(subcontext)
 			})
 		}
 		return group.Wait()

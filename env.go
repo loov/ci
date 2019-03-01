@@ -15,8 +15,9 @@ func (step *SetEnv) Setup(parent *Task) {
 		if err != nil {
 			return err
 		}
+
 		if step.Global {
-			context.Global.SetEnv(step.Env, value)
+			context.Global.GEnv.Set(step.Env, value)
 		} else {
 			context.SetEnv(step.Env, value)
 		}
@@ -81,7 +82,7 @@ func (step *CreateTempDir) Setup(parent *Task) {
 	task.Exec = func(context, _ *Context) error {
 		dir := context.Global.CreateTempDir(step.Env)
 		if step.Global {
-			context.Global.SetEnv(step.Env, dir)
+			context.Global.GEnv.Set(step.Env, dir)
 		} else {
 			context.SetEnv(step.Env, dir)
 		}
@@ -104,4 +105,22 @@ func (step *TempGopath) Setup(parent *Task) {
 		return nil
 	}
 	task.AddSteps(step.Steps)
+}
+
+// ChangeDir changes working directory
+type ChangeDir struct {
+	Target string
+}
+
+// Setup sets up the step
+func (step *ChangeDir) Setup(parent *Task) {
+	task := parent.Subtask("cd %q", step.Target)
+	task.Exec = func(context, _ *Context) error {
+		dir, err := context.ExpandEnv(step.Target)
+		if err != nil {
+			return nil
+		}
+		context.WorkingDir = dir
+		return nil
+	}
 }

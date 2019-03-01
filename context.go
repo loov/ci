@@ -26,6 +26,9 @@ type Logger interface {
 type GlobalContext struct {
 	// ScriptDir is the script location
 	ScriptDir string
+	// GEnv is the global environment variables
+	GEnv Env
+
 	Context
 
 	// TempDir defines the temporary working directory
@@ -36,11 +39,21 @@ type GlobalContext struct {
 	}
 }
 
+// Sub creates a sub context
+func (context *Context) Sub(name string) *Context {
+	return &Context{
+		Global:     context.Global,
+		WorkingDir: context.WorkingDir,
+		Env:        context.Env.Clone(),
+		Logger:     context.Logger.Named(name),
+	}
+}
+
 // Context defines task execution context and environment variable management
 type Context struct {
 	Global     *GlobalContext
 	WorkingDir string
-	Env        []string
+	Env        Env
 
 	Logger
 }
@@ -110,7 +123,7 @@ func (context *GlobalContext) CreateTempDir(prefix string) string {
 	if err := os.Mkdir(dir, 0777); err != nil {
 		context.Errorf("failed to create nested temporary directory: %v", err)
 	}
-	return ""
+	return dir
 }
 
 // Cleanup deletes all temporary data.
@@ -118,49 +131,23 @@ func (context *GlobalContext) Cleanup() error {
 	return os.RemoveAll(context.temp.root)
 }
 
-// Sub creates a sub context
-func (context *Context) Sub(name string) *Context {
-	return &Context{
-		Global:     context.Global,
-		WorkingDir: context.WorkingDir,
-		Env:        append([]string{}, context.Env...),
-		Logger:     context.Logger.Named(name),
-	}
-}
-
 // SetEnv changes environment variable value
-func (context *Context) SetEnv(env, value string) {
-	_ = context.UnsetEnv(env)
-	context.Env = append(context.Env, env+"="+value)
+func (context *Context) SetEnv(key, value string) {
+	context.Env.Set(key, value)
 }
 
 // UnsetEnv removes an existing environment value
-func (context *Context) UnsetEnv(env string) bool {
-	for i, env := range context.Env {
-		eq := strings.Index(env, "=")
-		if eq < 0 {
-			continue
-		}
-		if strings.EqualFold(env[:eq], env) {
-			context.Env = append(context.Env[:i], context.Env[i+1:]...)
-			return true
-		}
-	}
-	return false
+func (context *Context) UnsetEnv(target string) bool {
+	return context.Env.Unset(target)
 }
 
 // GetEnv finds the value of an environment variable
 func (context *Context) GetEnv(target string) (string, bool) {
-	for _, env := range context.Env {
-		eq := strings.Index(env, "=")
-		if eq < 0 {
-			continue
-		}
-		if strings.EqualFold(env[:eq], target) {
-			return env[eq+1:], true
-		}
+	v, ok := context.Env.Get(target)
+	if !ok {
+		return context.Global.GEnv.Get(target)
 	}
-	return "", false
+	return v, ok
 }
 
 // ExpandEnv replaces enviroment values in value,
@@ -205,4 +192,45 @@ func extractGlobPrefix(glob string) string {
 		return glob
 	}
 	return glob[:p]
+}
+
+// Env defines a set of environment variables
+type Env []string
+
+// Clone creates a deep clone of the environment.
+func (env Env) Clone() Env { return append(Env{}, env...) }
+
+// Set changes environment variable value
+func (env *Env) Set(key, value string) {
+	_ = env.Unset(key)
+	*env = append(*env, key+"="+value)
+}
+
+// Unset removes an existing environment value
+func (env *Env) Unset(target string) bool {
+	for i, key := range *env {
+		eq := strings.Index(key, "=")
+		if eq < 0 {
+			continue
+		}
+		if strings.EqualFold(key[:eq], target) {
+			*env = append((*env)[:i], (*env)[i+1:]...)
+			return true
+		}
+	}
+	return false
+}
+
+// Get finds the value of an environment variable
+func (env *Env) Get(target string) (string, bool) {
+	for _, key := range *env {
+		eq := strings.Index(key, "=")
+		if eq < 0 {
+			continue
+		}
+		if strings.EqualFold(key[:eq], target) {
+			return key[eq+1:], true
+		}
+	}
+	return "", false
 }

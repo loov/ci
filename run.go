@@ -1,7 +1,8 @@
 package ci
 
 import (
-	"time"
+	"os"
+	"os/exec"
 )
 
 // Run implements a step for executing a command
@@ -14,8 +15,12 @@ type Run struct {
 func (run *Run) Setup(parent *Task) {
 	task := parent.Subtask("run %q", run.Command)
 	task.Exec = func(_, subcontext *Context) error {
-		// TODO:
-		time.Sleep(time.Second)
-		return nil
+		subcontext.Logger.Printf("run %q %q\n", run.Command, run.Args)
+
+		cmd := exec.Command(run.Command, run.Args...)
+		cmd.Dir = subcontext.WorkingDir
+		cmd.Env = subcontext.Env
+		cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
+		return cmd.Run()
 	}
 }

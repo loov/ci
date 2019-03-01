@@ -78,6 +78,10 @@ func Remove(glob string) *ci.Remove {
 	}
 }
 
+func CD(target string) *ci.ChangeDir {
+	return &ci.ChangeDir{Target: target}
+}
+
 func TempGopath(steps ...ci.Step) *ci.TempGopath {
 	return &ci.TempGopath{Steps: steps}
 }

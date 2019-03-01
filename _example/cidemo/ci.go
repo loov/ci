@@ -18,7 +18,7 @@ import (
 var pipelines = Pipelines(
 	Pipeline("Default", "",
 		Stage("Download",
-			Run("go version"),
+			Run("go", "version"),
 			WhenEnv("CI", "",
 				CreateGlobalTempDir("SOURCE"),
 				Copy("$SCRIPTDIR/*", "$SOURCE"),
@@ -36,6 +36,7 @@ var pipelines = Pipelines(
 			Stage("Lint",
 				TempGopath(
 					Copy("$SOURCE/*", "$GOPATH/src/github.com/loov/cidemo"),
+					CD("$GOPATH/src/github.com/loov/cidemo"),
 					SetEnv("GO111MODULE", "on"),
 					Run("go", "mod", "vendor"),
 					Copy("./vendor/*", "$GOPATH/src"),
