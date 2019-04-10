@@ -1,4 +1,4 @@
-// +build ci
+// +build ignore
 
 package main
 
@@ -44,6 +44,9 @@ var pipelines = Pipelines(
 					SetEnv("GO111MODULE", "off"),
 					Run("golangci-lint", "-j=4", "run"),
 				),
+			),
+			Stage("Lint",
+				Run("go", "run", "main.go"),
 			),
 			Stage("Test",
 				Run("go", "test", "-v", "-race", "./..."),
@@ -91,11 +94,11 @@ func main() {
 	printPipeline(task)
 
 	if err != nil {
-		fmt.Fprintf(os.Stderr, "run failed: %v", err)
+		fmt.Fprintf(os.Stderr, "run failed: %v\n", err)
 		os.Exit(1)
 	}
 
-	fmt.Fprintf(os.Stderr, "run succeeded: %v", err)
+	fmt.Fprintf(os.Stderr, "run succeeded: %v\n", err)
 }
 
 func clear() {
