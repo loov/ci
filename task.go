@@ -138,25 +138,25 @@ func (task *Task) Status() TaskStatus {
 func (task *Task) PrintTo(w io.Writer, ident string) {
 	status := task.Status()
 
-	stat := " "
+	stat := " . "
 	duration := ""
 	switch {
 	case status.Running:
-		stat = "R"
+		stat = " R "
 		duration = formatDuration(time.Since(status.Started))
 	case status.Skipped:
-		stat = "S"
+		stat = " S "
 		duration = formatDuration(status.Finished.Sub(status.Started))
 	case status.Errored:
-		stat = "E"
+		stat = " E "
 		duration = formatDuration(status.Finished.Sub(status.Started))
 	case status.Done:
-		stat = "+"
+		stat = "   "
 		duration = formatDuration(status.Finished.Sub(status.Started))
 	}
 
 	if len(task.Tasks) == 0 {
-		fmt.Fprintf(w, "%5s [%s] %s%s\n", duration, stat, ident, task.Name)
+		fmt.Fprintf(w, "%5s %s %s%s\n", duration, stat, ident, task.Name)
 		return
 	}
 	if task.Name != "" {
@@ -166,9 +166,9 @@ func (task *Task) PrintTo(w io.Writer, ident string) {
 		}
 
 		if task.Parallel {
-			fmt.Fprintf(w, "%5s [%s] %s%s:%s (parallel)\n", duration, stat, ident, task.Name, desc)
+			fmt.Fprintf(w, "%5s %s %s%s:%s (parallel)\n", duration, stat, ident, task.Name, desc)
 		} else {
-			fmt.Fprintf(w, "%5s [%s] %s%s:%s\n", duration, stat, ident, task.Name, desc)
+			fmt.Fprintf(w, "%5s %s %s%s:%s\n", duration, stat, ident, task.Name, desc)
 		}
 	}
 	for _, task := range task.Tasks {
