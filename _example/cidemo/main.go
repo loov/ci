@@ -1,7 +1,12 @@
 package main
 
-import "github.com/kr/pretty"
+import (
+	"time"
+
+	"github.com/kr/pretty"
+)
 
 func main() {
-	pretty.Print("xyz")
+	time.Sleep(3 * time.Second)
+	pretty.Println("xyz")
 }

@@ -8,6 +8,7 @@ import (
 	"fmt"
 	"os"
 	"os/exec"
+	"runtime"
 	"time"
 
 	"github.com/loov/ci"
@@ -45,7 +46,7 @@ var pipelines = Pipelines(
 					Run("golangci-lint", "-j=4", "run"),
 				),
 			),
-			Stage("Lint",
+			Stage("Run",
 				Run("go", "run", "main.go"),
 			),
 			Stage("Test",
@@ -102,9 +103,16 @@ func main() {
 }
 
 func clear() {
-	cmd := exec.Command("cmd", "/c", "cls")
-	cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
-	cmd.Run()
+	switch runtime.GOOS {
+	case "windows":
+		cmd := exec.Command("cmd", "/c", "cls")
+		cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
+		cmd.Run()
+	case "linux", "darwin":
+		cmd := exec.Command("clear")
+		cmd.Stdout, cmd.Stderr = os.Stdout, os.Stderr
+		cmd.Run()
+	}
 }
 
 func monitor(ctx context.Context, pipeline *ci.Task) error {
