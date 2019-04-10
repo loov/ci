@@ -10,7 +10,21 @@ func (step *TempGopath) Setup(parent *Task) {
 	task := parent.Subtask("temp gopath")
 	task.Exec = func(_, context *Context) error {
 		dir := context.Global.CreateTempDir("gopath")
-		context.SetEnv("GOPKG", "$GOPATH/pkg")
+
+		// share gopkg directory to share cache between steps
+		gopkg, err := context.ExpandEnv("$GOPKG")
+		if err != nil {
+			gopkg, err = context.ExpandEnv("$GOPATH/pkg")
+			if err != nil {
+				gopath, err = getGOPATH()
+				if err != nil {
+					return err
+				}
+				gopkg = filepath.Join(gopath, "pkg")
+			}
+		}
+
+		context.SetEnv("GOPKG", gopkg)
 		context.SetEnv("GOPATH", dir)
 		return nil
 	}
@@ -33,4 +47,9 @@ func (step *ChangeDir) Setup(parent *Task) {
 		context.WorkingDir = dir
 		return nil
 	}
+}
+
+func getGOPATH() (string, error) {
+	out, err := exec.Command("go", "env", "GOPATH").CombinedOutput()
+	return strings.TrimSpace(string(out)), err
 }
