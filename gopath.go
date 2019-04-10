@@ -1,8 +1,8 @@
 package ci
 
 import (
-	"filepath"
 	"os/exec"
+	"path/filepath"
 	"strings"
 )
 
