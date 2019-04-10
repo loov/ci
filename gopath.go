@@ -1,5 +1,11 @@
 package ci
 
+import (
+	"filepath"
+	"os/exec"
+	"strings"
+)
+
 // TempGopath executes steps in a temporary gopath directory
 type TempGopath struct {
 	Steps []Step
