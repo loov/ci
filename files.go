@@ -2,6 +2,8 @@ package ci
 
 import (
 	"fmt"
+	"io"
+	"io/ioutil"
 	"os"
 	"path/filepath"
 )
@@ -39,7 +41,12 @@ func (step *Copy) Setup(parent *Task) {
 		}
 
 		for _, match := range matches {
-			err := copyAny(sourcePrefix, match, destination)
+			rel, err := filepath.Rel(sourcePrefix, match)
+			if err != nil {
+				return err
+			}
+
+			err = copyAny(sourcePrefix, rel, destination)
 			if err != nil {
 				return err
 			}
@@ -87,6 +94,52 @@ func safeRemove(path string) error {
 	return os.RemoveAll(path)
 }
 
-func copyAny(sourceDir, sourceDirOrFile, destinationDir string) error {
-	return nil
+func copyAny(sourceDir, sourceDirOrFile, destinationDir string) (err error) {
+	sourcePath := filepath.Join(sourceDir, sourceDirOrFile)
+	destinationPath := filepath.Join(destinationDir, sourceDirOrFile)
+
+	stat, err := os.Stat(sourcePath)
+	if err != nil {
+		return err
+	}
+
+	if stat.IsDir() {
+		paths, err := ioutil.ReadDir(sourcePath)
+		if err != nil {
+			return err
+		}
+
+		for _, path := range paths {
+			name := path.Name()
+			err := copyAny(sourceDir, name, filepath.Join(destinationPath, name))
+			if err != nil {
+				return err
+			}
+		}
+		return nil
+	}
+
+	source, err := os.Open(sourcePath)
+	if err != nil {
+		return err
+	}
+
+	defer source.Close()
+
+	destination, err := os.Create(destinationPath)
+	if err != nil {
+		return err
+	}
+
+	defer destination.Close()
+
+	_, err = io.Copy(destination, source)
+	if err == nil {
+		sourceinfo, err := source.Stat()
+		if err == nil {
+			err = destination.Chmod(sourceinfo.Mode())
+		}
+	}
+
+	return err
 }
