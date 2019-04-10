@@ -95,6 +95,8 @@ func safeRemove(path string) error {
 }
 
 func copyAny(sourceDir, sourceDirOrFile, destinationDir string) (err error) {
+	os.Mkdir(destinationDir, 0755)
+
 	sourcePath := filepath.Join(sourceDir, sourceDirOrFile)
 	destinationPath := filepath.Join(destinationDir, sourceDirOrFile)
 
@@ -111,7 +113,7 @@ func copyAny(sourceDir, sourceDirOrFile, destinationDir string) (err error) {
 
 		for _, path := range paths {
 			name := path.Name()
-			err := copyAny(sourceDir, name, filepath.Join(destinationPath, name))
+			err := copyAny(sourcePath, name, destinationPath)
 			if err != nil {
 				return err
 			}
