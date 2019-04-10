@@ -1,6 +1,7 @@
 package ci
 
 import (
+	"os"
 	"os/exec"
 	"path/filepath"
 	"strings"
@@ -16,21 +17,23 @@ func (step *TempGopath) Setup(parent *Task) {
 	task := parent.Subtask("temp gopath")
 	task.Exec = func(_, context *Context) error {
 		dir := context.Global.CreateTempDir("gopath")
+		context.Printf("temp GOPATH := %q", dir)
 
 		// share gopkg directory to share cache between steps
-		gopkg, err := context.ExpandEnv("$GOPKG")
+		gopkg, err := context.ExpandEnv("$GOPATH/pkg")
 		if err != nil {
-			gopkg, err = context.ExpandEnv("$GOPATH/pkg")
+			gopath, err := getGOPATH()
 			if err != nil {
-				gopath, err := getGOPATH()
-				if err != nil {
-					return err
-				}
-				gopkg = filepath.Join(gopath, "pkg")
+				return err
 			}
+			gopkg = filepath.Join(gopath, "pkg")
 		}
 
-		context.SetEnv("GOPKG", gopkg)
+		err = os.Symlink(gopkg, filepath.Join(dir, "pkg"))
+		if err != nil {
+			return err
+		}
+
 		context.SetEnv("GOPATH", dir)
 		return nil
 	}
