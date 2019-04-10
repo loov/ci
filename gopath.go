@@ -16,7 +16,7 @@ func (step *TempGopath) Setup(parent *Task) {
 		if err != nil {
 			gopkg, err = context.ExpandEnv("$GOPATH/pkg")
 			if err != nil {
-				gopath, err = getGOPATH()
+				gopath, err := getGOPATH()
 				if err != nil {
 					return err
 				}
