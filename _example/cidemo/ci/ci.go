@@ -1,5 +1,3 @@
-// +build ignore
-
 package main
 
 import (
@@ -35,22 +33,16 @@ var pipelines = Pipelines(
 		),
 		Parallel("Verification",
 			Stage("Lint",
-				TempGopath(
-					Copy("$SOURCE/*", "$GOPATH/src/github.com/loov/cidemo"),
-					CD("$GOPATH/src/github.com/loov/cidemo"),
-					SetEnv("GO111MODULE", "on"),
-					Run("go", "mod", "vendor"),
-					Copy("./vendor/*", "$GOPATH/src"),
-					Remove("./vendor"),
-					SetEnv("GO111MODULE", "off"),
-					Run("golangci-lint", "-j=4", "run"),
-				),
+				Run("golangci-lint", "-j=4", "run"),
 			),
 			Stage("Run",
+				Run("sleep", "3"),
 				Run("go", "run", "main.go"),
 			),
 			Stage("Test",
+				Run("sleep", "5"),
 				Run("go", "test", "-v", "-race", "./..."),
+				Run("sleep", "1"),
 			),
 		),
 	),
@@ -86,7 +78,6 @@ func main() {
 		return task.Run(&globalContext.Context)
 	})
 	group.Go(func() error {
-		return nil
 		return monitor(ctx, task)
 	})
 
